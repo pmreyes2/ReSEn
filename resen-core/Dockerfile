@@ -81,6 +81,18 @@ RUN /bin/bash -c 'bash setup_spacepy.sh && rm setup_spacepy.sh'
 COPY resources/helpers/setup_pyglow.sh .
 RUN /bin/bash -cl 'bash setup_pyglow.sh && rm setup_pyglow.sh'
 
+# install hdf5viewer
+USER root
+RUN mkdir -p /usr/local/lib/nodejs
+RUN wget https://nodejs.org/dist/v10.16.3/node-v10.16.3-linux-x64.tar.xz
+RUN tar -xJvf node-v10.16.3-linux-x64.tar.xz -C /usr/local/lib/nodejs
+RUN rm -rf node-v10.16.3-linux-x64.tar.xz
+#RUN apt-get install -y --no-install-recommends nodejs npm
+USER $NB_USER
+RUN /bin/bash -c 'echo "export PATH=/usr/local/lib/nodejs/node-v10.16.3-linux-x64/bin:$PATH " >> /home/$NB_USER/.bashrc'
+COPY resources/helpers/setup_hdf5viewer.sh .
+RUN /bin/bash -cl 'bash setup_hdf5viewer.sh && rm setup_hdf5viewer.sh'
+
 RUN mkdir /home/$NB_USER/work
 WORKDIR /home/$NB_USER
 
@@ -93,15 +105,8 @@ RUN /bin/bash -c 'source /home/$NB_USER/envs/py36/bin/activate && \
                   yes | jupyter kernelspec remove python3'
 RUN /bin/bash -c 'printf "c.KernelSpecManager.ensure_native_kernel = False\n" >> /home/$NB_USER/.jupyter/jupyter_notebook_config.py'
 
-# install hdf5viewer
-USER root
-RUN apt-get install -y --no-install-recommends nodejs npm
-USER $NB_USER
-COPY resources/helpers/setup_hdf5viewer.sh .
-RUN /bin/bash -cl 'bash setup_hdf5viewer.sh && rm setup_hdf5viewer.sh'
-USER root
-RUN apt-get purge -y  npm
 
+USER root
 # Remove apt cache to make the image smaller
 RUN rm -rf /var/lib/apt/lists/*
 RUN /bin/bash -c 'rm -rf /home/$NB_USER/build && rm -rf /home/$NB_USER/.wget-hsts'
